@@ -21,6 +21,10 @@ object CodeGraphMacros {
   def inputsImpl(c: whitebox.Context)(args: c.Tree*): c.Tree = {
     import c.universe._
     val applyArgs = args.map(arg => q"$arg.apply()")
-    q"inputInstantiator[(..$applyArgs)].apply()"
+    if (applyArgs.size == 1) {
+      q"inputInstantiator[Tuple1[..$applyArgs]].apply()"
+    } else {
+      q"inputInstantiator[(..$applyArgs)].apply()"
+    }
   }
 }
