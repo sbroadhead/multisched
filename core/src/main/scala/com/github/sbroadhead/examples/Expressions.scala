@@ -131,17 +131,57 @@ object Expressions {
     }
     cg.outputs.map(x => env.getOrElse(x, throw InvalidNodeKeyException(x)))
   }
+
+  /**
+   * Specialized [[CodeGraphBuilder]] supporting extended syntax for expressions.
+   */
+  class ExpressionGraphBuilder extends CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel] {
+    import cg.mutators._
+
+    implicit class IntegerOperations(n: NodeName[INT]) {
+      def +(m: NodeName[INT]): NodeName[INT] = add $(n, m)
+      def -(m: NodeName[INT]): NodeName[INT] = sub $(n, m)
+      def *(m: NodeName[INT]): NodeName[INT] = mul $(n, m)
+      def /(m: NodeName[INT]): NodeName[INT] = div $(n, m)
+      def <(m: NodeName[INT]): NodeName[BOOL] = lt $(n, m)
+      def >(m: NodeName[INT]): NodeName[BOOL] = gt $(n, m)
+      def ===(m: NodeName[INT]): NodeName[BOOL] = equ $(n, m)
+    }
+
+    implicit class BooleanOperations(n: NodeName[BOOL]) {
+      def &&(m: NodeName[BOOL]): NodeName[BOOL] = and $(n, m)
+      def ||(m: NodeName[BOOL]): NodeName[BOOL] = or $(n, m)
+    }
+
+    // Automatic constant promotion
+    implicit def toConst[T, U <: ExprNodeLabel with Product, V <: ExprEdgeLabel with EdgeLabel.Nullary[U]]
+      (value: T)(implicit ct: ConstEdge[T, U, V]): NodeName[U] =
+        const(value)
+  }
   
-  object simpleExprCodeGraph extends CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel] {
+  // Simple expression
+  object simpleExprCodeGraph extends ExpressionGraphBuilder {
     import cg.mutators._
 
     val (x, y) = input(INT, INT)
 
-    val sum = add $(x, y)
-    val prod = mul $(x, y)
-    val prodMinusSum = sub $(prod, sum)
-    val resultGt100 = gt $(prodMinusSum, const(100))
+    val sum = x + y
+    val prod = x * y
+    val prodMinusSum = prod - sum
+    val resultGt100 = prodMinusSum > 100
 
     output(prodMinusSum, resultGt100)
+  }
+
+  // Evaluate a polynomial
+  case class PolynomialGraph(coeffs: Seq[Int]) extends ExpressionGraphBuilder {
+    import cg.mutators._
+
+    val x = input(INT)
+    var r = const(coeffs.head)
+    for (a <- coeffs.tail) {
+      r = (r * x) + a
+    }
+    output(r)
   }
 }
