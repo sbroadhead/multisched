@@ -49,8 +49,8 @@ class CodeGraphOps[N, E](val cg: CodeGraph[N, E]) extends AnyVal {
     }.toSeq
 
   /**
-   * Return a lazy stream of edge keys in topologically sorted order.
-   * @return a lazy stream of edge keys.
+   * Return a sequence of edge keys in topologically sorted order.
+   * @return a sequence of edge keys.
    */
   def topSort: Seq[CodeGraph.EdgeKey] = {
     val nodes: MutableSet[CodeGraph.NodeKey] = MutableSet(cg.inputs : _*)
