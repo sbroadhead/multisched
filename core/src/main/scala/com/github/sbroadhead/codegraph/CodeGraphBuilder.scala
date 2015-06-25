@@ -2,7 +2,6 @@ package com.github.sbroadhead.codegraph
 
 import com.github.sbroadhead._
 
-import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.collection.mutable.{Seq => MutableSeq}
 import shapeless._
