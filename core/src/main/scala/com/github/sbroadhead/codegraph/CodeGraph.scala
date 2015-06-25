@@ -11,6 +11,12 @@ import scala.collection._
 trait CodeGraph[N, E] {
   import CodeGraph._
 
+  /** The node label type */
+  type NodeType = N
+
+  /** The edge label type */
+  type EdgeType = E
+
   /**
    * Return the inputs to this code graph.
    * @return the inputs to this code graph.
@@ -45,6 +51,19 @@ trait CodeGraph[N, E] {
 object CodeGraph {
   type NodeKey = Long
   type EdgeKey = Long
+
+  /**
+   * Construct an immutable [[CodeGraph]] given the structural components.
+   * @return the newly constructed [[CodeGraph]].
+   */
+  def apply[N, E]
+    (nodes0: Map[NodeKey, N], edges0: Map[EdgeKey, Edge[E]], inputs0: Seq[NodeKey], outputs0: Seq[NodeKey]): CodeGraph[N, E] =
+      new CodeGraph[N, E] {
+        val nodes = nodes0
+        val edges = edges0
+        val inputs = inputs0
+        val outputs = outputs0
+      }
 
   /**
    * An edge label along with source and target tentacles.

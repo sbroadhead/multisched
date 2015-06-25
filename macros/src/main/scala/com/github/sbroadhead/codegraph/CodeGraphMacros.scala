@@ -12,19 +12,29 @@ object CodeGraphMacros {
     import c.universe._
     val prefix = c.prefix
     args match {
-      case Nil => q"$prefix.withArgs(())"
+      case Nil => q"$prefix.withArgs(<>)"
       case x :: Nil => q"$prefix.withArgs(Tuple1($x))"
       case xs => q"$prefix.withArgs((..$xs))"
     }
   }
 
-  def inputsImpl(c: whitebox.Context)(args: c.Tree*): c.Tree = {
+  def outputImpl(c: blackbox.Context)(args: c.Tree*): c.Tree = {
     import c.universe._
-    val applyArgs = args.map(arg => q"$arg.apply()")
-    if (applyArgs.size == 1) {
-      q"inputInstantiator[Tuple1[..$applyArgs]].apply()"
-    } else {
-      q"inputInstantiator[(..$applyArgs)].apply()"
+    val prefix = c.prefix
+    args match {
+      case Nil => q"$prefix.OutputConsumer().apply(<>)"
+      case x :: Nil => q"$prefix.OutputConsumer().apply(Tuple1($x))"
+      case xs => q"$prefix.OutputConsumer().apply((..$xs))"
+    }
+  }
+
+  def spliceImpl(c: whitebox.Context)(cg: c.Tree, args: c.Tree*): c.Tree = {
+    import c.universe._
+    val prefix = c.prefix
+    args match {
+      case Nil => q"$prefix.Splicer($cg).apply(<>)"
+      case x :: Nil => q"$prefix.Splicer($cg).apply(Tuple1($x))"
+      case xs => q"$prefix.Splicer($cg).apply((..$xs))"
     }
   }
 }

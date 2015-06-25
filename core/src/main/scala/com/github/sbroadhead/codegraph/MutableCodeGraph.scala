@@ -5,7 +5,7 @@ import scala.collection.mutable.{Map => MutableMap, Seq => MutableSeq}
 /**
  * A mutable [[CodeGraph]] instance.
  */
-class MutableCodeGraph[N, E] extends CodeGraph[N, E] {
+class MutableCodeGraph[N, E] extends CodeGraph[N, E] with CodeGraphInterface {
   import CodeGraph._
 
   /** Code graph inputs. */
@@ -19,22 +19,12 @@ class MutableCodeGraph[N, E] extends CodeGraph[N, E] {
 
   /** Edges in this code graph. */
   var edges: MutableMap[EdgeKey, Edge[E]] = MutableMap()
-
-  /** A mutator instance which contains implicit mutators for this type of codegraph. */
-  object mutators extends CodeGraphMutators[N, E](this)
 }
 
 /**
  * Companion object for [[MutableCodeGraph]].
  */
 object MutableCodeGraph {
-  /**
-   * Create a [[MutableCodeGraph]] for the given [[CodeGraph]].
-   * @param cg The [[CodeGraph]] to create a builder for.
-   * @tparam N The node label type.
-   * @tparam E The edge label type.
-   * @return The newly created [[MutableCodeGraph]].
-   */
   def apply[N, E](cg: CodeGraph[N, E]): MutableCodeGraph[N, E] = {
     val builder = new MutableCodeGraph[N, E]
     builder.inputs = MutableSeq(cg.inputs : _*)
@@ -42,6 +32,21 @@ object MutableCodeGraph {
     builder.nodes = MutableMap(cg.nodes.toSeq : _*)
     builder.edges = MutableMap(cg.edges.toSeq : _*)
     builder
+  }
+
+  def apply[N, E, Input0 <: Product, Output0 <: Product]
+    (cg: CodeGraph[N, E] with CodeGraphInterface.Aux[Input0, Output0]): MutableCodeGraph.Aux[N, E, Input0, Output0] = {
+      val builder = new MutableCodeGraph[N, E] { type Input = Input0; type Output = Output0 }
+      builder.inputs = MutableSeq(cg.inputs : _*)
+      builder.outputs = MutableSeq(cg.outputs : _*)
+      builder.nodes = MutableMap(cg.nodes.toSeq : _*)
+      builder.edges = MutableMap(cg.edges.toSeq : _*)
+      builder
+    }
+
+  type Aux[N, E, Input0, Output0] = MutableCodeGraph[N, E] {
+    type Input = Input0
+    type Output = Output0
   }
 
   implicit class CodeGraphExts[N, E](val cg: CodeGraph[N, E]) extends AnyVal {

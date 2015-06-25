@@ -9,4 +9,7 @@ object Exceptions {
 
   case class InvalidNodeKeyException(key: CodeGraph.NodeKey)
     extends RuntimeException(s"The node key '$key' was not found in the CodeGraph.")
+
+  case class TopSortFailedException()
+    extends RuntimeException(s"The topological sort of the CodeGraph failed.")
 }

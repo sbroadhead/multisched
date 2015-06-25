@@ -89,8 +89,8 @@ object Expressions {
    * every type of constant we wish to use.
    */
   def const[T, U <: ExprNodeLabel with Product, V <: ExprEdgeLabel with EdgeLabel.Nullary[U]](x: T)
-    (implicit pc: ConstEdge[T, U, V], cg: MutableCodeGraph[ExprNodeLabel, ExprEdgeLabel]): NodeName[U] = {
-      import cg.mutators._
+    (implicit pc: ConstEdge[T, U, V], builder: CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel]): NodeName[U] = {
+      import builder.mutators._
       val edgeLabel = pc.promote(x)
       val node = pc.newNode
       addNode(node)
@@ -136,7 +136,7 @@ object Expressions {
    * Specialized [[CodeGraphBuilder]] supporting extended syntax for expressions.
    */
   class ExpressionGraphBuilder extends CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel] {
-    import cg.mutators._
+    import mutators._
 
     implicit class IntegerOperations(n: NodeName[INT]) {
       def +(m: NodeName[INT]): NodeName[INT] = add $(n, m)
@@ -158,13 +158,15 @@ object Expressions {
       (value: T)(implicit ct: ConstEdge[T, U, V]): NodeName[U] =
         const(value)
   }
-  
+
   // Simple expression
   object simpleExprCodeGraph extends ExpressionGraphBuilder {
-    import cg.mutators._
+    type Input = (INT, INT)
+    type Output = (INT, BOOL)
 
-    val (x, y) = input(INT, INT)
+    import mutators._
 
+    val (x, y) = input
     val sum = x + y
     val prod = x * y
     val prodMinusSum = prod - sum
@@ -175,13 +177,29 @@ object Expressions {
 
   // Evaluate a polynomial
   case class PolynomialGraph(coeffs: Seq[Int]) extends ExpressionGraphBuilder {
-    import cg.mutators._
+    type Input = Tuple1[INT]
+    type Output = Tuple1[INT]
 
-    val x = input(INT)
+    import mutators._
+
+    val x = input
     var r = const(coeffs.head)
     for (a <- coeffs.tail) {
       r = (r * x) + a
     }
     output(r)
+  }
+
+  // Compose CodeGraphs using splicing
+  object spliceCodeGraph extends ExpressionGraphBuilder {
+    type Input = Tuple2[INT, INT]
+    type Output = Tuple1[INT]
+
+    import mutators._
+
+    val (x, y) = input
+    val (prodMinusSum, resultGt100) = splice(simpleExprCodeGraph, x, y)
+    val answer = splice(PolynomialGraph(Seq(2, 4, 6, 8)), prodMinusSum)
+    output(answer)
   }
 }

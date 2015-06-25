@@ -1,6 +1,7 @@
 package com.github.sbroadhead.codegraph
 
 import scala.collection.mutable.{Map => MutableMap, MutableList, Set => MutableSet}
+import scala.util.Random
 
 /**
  * Extended operations on [[CodeGraph]].
@@ -58,11 +59,35 @@ class CodeGraphOps[N, E](val cg: CodeGraph[N, E]) extends AnyVal {
     val edges: MutableList[CodeGraph.EdgeKey] = MutableList()
     while (edgesLeft.nonEmpty) {
       val newEdges = edgesLeft.filter { case (k, e) => e.args.forall(nodes.contains) }
+      if (newEdges.isEmpty) {
+        throw TopSortFailedException()
+      }
       edgesLeft --= newEdges.keys
       edges ++= newEdges.keys.toSeq
       nodes ++= newEdges.values.flatMap(e => e.results)
     }
     edges
+  }
+
+  /**
+   * Return a new CodeGraph with the same structure as this one, but with new node names,
+   * suitable for splicing into an existing CodeGraph.
+   * @return
+   */
+  def duplicate: CodeGraph[N, E]  = {
+    val renameMap = cg.nodes.keys.zip(Seq.fill(cg.nodes.size)(Random.nextLong())).toMap
+    def rename(edge: CodeGraph.Edge[E]): CodeGraph.Edge[E] =
+      new CodeGraph.Edge[E](
+        edge.label,
+        edge.args.map(x => renameMap.getOrElse(x, sys.error("impossible: node not found"))),
+        edge.results.map(x => renameMap.getOrElse(x, sys.error("impossible: node not found"))))
+
+    val newNodes = cg.nodes.map { case (k, v) => (renameMap.getOrElse(k, sys.error("impossible: node not found")), v) }
+    val newEdges = cg.edges.map { case (k, v) => (k, rename(v)) }
+    val newInputs = cg.inputs.map { x => renameMap.getOrElse(x, sys.error("impossible: node not found")) }
+    val newOutputs = cg.outputs.map { x => renameMap.getOrElse(x, sys.error("impossible: node not found")) }
+
+    CodeGraph[N, E](newNodes, newEdges, newInputs, newOutputs)
   }
 }
 
