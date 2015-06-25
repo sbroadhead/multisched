@@ -58,7 +58,7 @@ trait CodeGraphBuilder[N, E] extends CodeGraph[N, E] with CodeGraphInterface { s
         for (e <- newcg.edges.values) {
           addEdge(new CodeGraph.Edge[E](
             e.label,
-            e.args.map(x => renameMap.getOrElse(x, { println(s"$x"); x })),
+            e.args.map(x => renameMap.getOrElse(x, x)),
             e.results // inputs can't be in the results
           ))
         }
