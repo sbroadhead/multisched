@@ -1,5 +1,6 @@
 package com.github.sbroadhead.codegraph
 
+import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 import scala.reflect.macros.whitebox

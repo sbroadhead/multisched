@@ -129,7 +129,7 @@ object Expressions {
       }
       env = env ++ edge.results.zip(results).toMap
     }
-    cg.outputs.map(x => env.getOrElse(x, throw InvalidNodeKeyException(x)))
+    cg.outputs.map(x => env.getOrElse(x, throw new RuntimeException(s"Node not evaluated: $x")))
   }
 
   /**
@@ -139,18 +139,18 @@ object Expressions {
     import mutators._
 
     implicit class IntegerOperations(n: NodeName[INT]) {
-      def +(m: NodeName[INT]): NodeName[INT] = add $(n, m)
-      def -(m: NodeName[INT]): NodeName[INT] = sub $(n, m)
-      def *(m: NodeName[INT]): NodeName[INT] = mul $(n, m)
-      def /(m: NodeName[INT]): NodeName[INT] = div $(n, m)
-      def <(m: NodeName[INT]): NodeName[BOOL] = lt $(n, m)
-      def >(m: NodeName[INT]): NodeName[BOOL] = gt $(n, m)
-      def ===(m: NodeName[INT]): NodeName[BOOL] = equ $(n, m)
+      def +(m: NodeName[INT]): NodeName[INT] = add.$(n, m)
+      def -(m: NodeName[INT]): NodeName[INT] = sub.$(n, m)
+      def *(m: NodeName[INT]): NodeName[INT] = mul.$(n, m)
+      def /(m: NodeName[INT]): NodeName[INT] = div.$(n, m)
+      def <(m: NodeName[INT]): NodeName[BOOL] = lt.$(n, m)
+      def >(m: NodeName[INT]): NodeName[BOOL] = gt.$(n, m)
+      def ===(m: NodeName[INT]): NodeName[BOOL] = equ.$(n, m)
     }
 
     implicit class BooleanOperations(n: NodeName[BOOL]) {
-      def &&(m: NodeName[BOOL]): NodeName[BOOL] = and $(n, m)
-      def ||(m: NodeName[BOOL]): NodeName[BOOL] = or $(n, m)
+      def &&(m: NodeName[BOOL]): NodeName[BOOL] = and.$(n, m)
+      def ||(m: NodeName[BOOL]): NodeName[BOOL] = or.$(n, m)
     }
 
     // Automatic constant promotion
