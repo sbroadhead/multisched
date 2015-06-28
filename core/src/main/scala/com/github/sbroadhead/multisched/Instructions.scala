@@ -10,19 +10,35 @@ object Instructions {
 
   abstract class Instruction
 
-  case class const[T, N](value: T)(implicit val c: Const.Aux[T, N]) extends Instruction with EdgeLabel.Nullary[N]
-
-  /** Floating multiply. */
-  case object `fm` extends Instruction with EdgeLabel.Binary[VEC4[FLOAT], VEC4[FLOAT], /* -> */ VEC4[FLOAT]]
-
-  /** Convert floating to signed integer */
-  case class `cflts`(scale: Int) extends Instruction with EdgeLabel.Unary[VEC4[FLOAT], /* -> */ VEC4[INT]]
-
-  /** And */
-  case object `and` extends Instruction with EdgeLabel.Binary[VEC4[INT], VEC4[INT], /* -> */ VEC4[INT]]
+  /** Load constant value */
+  case class const(value: (Int, Int, Int, Int)) extends Instruction with EdgeLabel.Nullary[VEC4]
 
   /** Add */
-  case object `a` extends Instruction with EdgeLabel.Binary[VEC4[INT], VEC4[INT], /* -> */ VEC4[INT]]
+  case object `a` extends Instruction with EdgeLabel.Binary[VEC4, VEC4, /* -> */ VEC4]
+
+  /** And */
+  case object `and` extends Instruction with EdgeLabel.Binary[VEC4, VEC4, /* -> */ VEC4]
+
+  /** Convert floating to signed integer */
+  case class `cflts`(scale: Int) extends Instruction with EdgeLabel.Unary[VEC4, /* -> */ VEC4]
+
+  /** Floating compare greater than */
+  case object `fcgt` extends Instruction with EdgeLabel.Binary[VEC4, VEC4, /* -> */ VEC4]
+
+  /** Floating multiply */
+  case object `fm` extends Instruction with EdgeLabel.Binary[VEC4, VEC4, /* -> */ VEC4]
+
+  /** Floating multiply and add */
+  case object `fma` extends Instruction with EdgeLabel.Ternary[VEC4, VEC4, VEC4, /* -> */ VEC4]
+
+  /** Rotate word immediate */
+  case class `roti`(value: Int) extends Instruction with EdgeLabel.Unary[VEC4, /* -> */ VEC4]
+
+  /** Select bits */
+  case object `selb` extends Instruction with EdgeLabel.Ternary[VEC4, VEC4, VEC4, /* -> */ VEC4]
+
+  /** Shuffle bytes */
+  case object `shufb` extends Instruction with EdgeLabel.Ternary[VEC4, VEC4, VEC4, /* -> */ VEC4]
 
   //case object `clz`       extends EdgeLabel.Unary[]
 

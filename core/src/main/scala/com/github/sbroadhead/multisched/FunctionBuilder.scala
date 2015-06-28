@@ -7,25 +7,38 @@ import Registers._
 /**
  * Builder for `multisched` functions.
  */
-class FunctionBuilder extends CodeGraphBuilder[Register, Instruction] {
-  /**
-   * The function `2^x` on integers.
-   */
-  def exp2(p: Int): Int = p match {
-    case 0 => 1
-    case x if x > 0 => 2 * exp2(p - 1)
-    case x if x < 0 => exp2(p + 1) / 2
+class FunctionBuilder extends CodeGraphBuilder[Register, Instruction] { self =>
+  trait FunctionBuilderMutators extends DefaultMutators {
+    /**
+     * Turns a float into a constant vector of the same float repeated four times.
+     */
+    def splatFloat4(f: Float): NodeName[VEC4] = {
+      val i = java.lang.Float.floatToRawIntBits(f)
+      Instructions.const((i, i, i, i)).$()
+    }
+
+    /**
+     * Turns an integer into a constant vector of the same integer repeated four times.
+     */
+    def splatInt4(w: Int): NodeName[VEC4] =
+      Instructions.const((w, w, w, w)).$()
+
+    /**
+     * Turns a sequence of 16 bytes into a constant vector.
+     */
+    def bytes16(b: Seq[Int]): NodeName[VEC4] = {
+      if (b.length != 16)
+        throw new RuntimeException("bytes16 requires a 16-byte argument")
+      val Seq(p, q, r, s): Seq[Int] = b.grouped(4).map(_.fold(0)(_ << 8 | _)).toSeq
+      Instructions.const((p, q, r, s)).$()
+    }
   }
 
-  /**
-   * Turns a float into a constant vector of the same float repeated four times.
-   */
-  def splatFloat4(f: Float): NodeName[VEC4[FLOAT]] =
-    mutators.EdgeFactory(Instructions.const[(Float, Float, Float, Float), VEC4[FLOAT]]((f, f, f, f))).$()
+  /** Specialized function builder mutators */
+  override val mutators = new FunctionBuilderMutators {}
 
-  /**
-   * Turns an integer into a constant vector of the same integer repeated four times.
-   */
-  def splatInt4(w: Int): NodeName[VEC4[INT]] =
-    mutators.EdgeFactory(Instructions.const[(Int, Int, Int, Int), VEC4[INT]]((w, w, w, w))).$()
+  /* Math utilities */
+  val mathUtils = new MathUtils {
+    override val builder: FunctionBuilder = self
+  }
 }

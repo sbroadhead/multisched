@@ -29,7 +29,16 @@ trait CodeGraphBuilder[N, E] extends CodeGraph[N, E] with CodeGraphInterface { s
   def inputs = cg.inputs.toSeq
   def outputs = cg.outputs.toSeq
 
-  object mutators {
+  /**
+   * Base trait for mutator containter.
+   */
+  trait DefaultMutators {
+    // Inside the code graph builder, 1-tuples are convertible to their container types
+    implicit def goAwayTuple1[T](tup: Tuple1[T]): T = tup._1
+
+    // Inside the code graph builder, everything is convertible to a 1-tuple
+    implicit def comeBackTuple1[T](t: T): Tuple1[T] = Tuple1(t)
+
     /**
      * Helper object to splice a typed CodeGraph into `cg` given typed arguments,
      * and producing typed output nodes.
@@ -173,9 +182,12 @@ trait CodeGraphBuilder[N, E] extends CodeGraph[N, E] with CodeGraphInterface { s
     }
   }
 
+  def getResult: CodeGraph[N, E] = CodeGraph[N, E](nodes, edges, inputs, outputs)
 
-  // Inside the code graph builder, 1-tuples are convertible to their container types
-  protected implicit def goAwayTuple1[T](tup: Tuple1[T]): T = tup._1
+  /**
+   * Default mutator container.
+   */
+  val mutators = new DefaultMutators {}
 
   private var _inputNodes: Product = <>
   private var _inputsCreated: Boolean = false
