@@ -9,6 +9,7 @@ object BuildSettings {
     resolvers ++= Seq(
       Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
+      Resolver.sonatypeRepo("public"),
       "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
     ),
     libraryDependencies ++= Seq(
@@ -43,7 +44,8 @@ object MultiSchedBuild extends Build {
     "core",
     file("core"),
     settings = buildSettings ++ Seq(
-      name := "multisched"
+      name := "multisched",
+      libraryDependencies ++= Seq("org.reflections" % "reflections" % "0.9.10")
     )
   ) dependsOn macros
 }

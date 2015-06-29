@@ -70,6 +70,33 @@ class CodeGraphOps[N, E](val cg: CodeGraph[N, E]) extends AnyVal {
   }
 
   /**
+   * Return a new CodeGraph with any unused nodes and edges deleted.
+   * @return The cleaned CodeGraph.
+   */
+  def clean: CodeGraph[N, E] = {
+    val usedEdges: MutableSet[CodeGraph.EdgeKey] = MutableSet()
+    var toGenerate: MutableSet[CodeGraph.NodeKey] = MutableSet(cg.outputs : _*)
+
+    while (toGenerate.nonEmpty) {
+      val producerEdges = toGenerate.flatMap(producersOf)
+      usedEdges ++= producerEdges
+      toGenerate = producerEdges.flatMap(x => edge(x).head.args)
+    }
+
+    val usedNodes = usedEdges.flatMap({ k =>
+      val e = edge(k).head
+      Set(e.args : _*) ++ Set(e.results : _*)
+    }) ++ Set(cg.inputs : _*) ++ Set(cg.outputs : _*)
+
+    CodeGraph[N, E](
+      cg.nodes.filterKeys(usedNodes.contains),
+      cg.edges.filterKeys(usedEdges.contains),
+      cg.inputs,
+      cg.outputs
+    )
+  }
+
+  /**
    * Return a new CodeGraph with the same structure as this one, but with new node names,
    * suitable for splicing into an existing CodeGraph.
    * @return

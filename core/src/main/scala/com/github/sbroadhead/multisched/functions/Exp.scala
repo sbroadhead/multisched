@@ -7,6 +7,8 @@ import com.github.sbroadhead.multisched._
  * Exponential function.
  */
 object Exp {
+  import CodeGraphOps._
+
   private[Exp] object ExpBuilder extends FunctionBuilder {
     import Instructions._
     import Registers._
@@ -58,5 +60,5 @@ object Exp {
   /**
    * The immutable code graph representing this function.
    */
-  val codeGraph: FunctionGraph = ExpBuilder.getResult
+  val codeGraph: FunctionGraph = ExpBuilder.getResult.clean
 }
