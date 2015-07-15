@@ -46,8 +46,7 @@ trait LookupTable8 {
     }
     def splat(rotWidth: Int, x: NodeName[VEC4]) =
       shufb.$(x, x, bytes16(
-        Seq(0, 4, 8, 12)
-        .flatMap { x => Seq.fill[Int](4)(x) }
+        Seq(0, 0, 0, 0, 4, 4, 4, 4, 8, 8, 8, 8, 12, 12, 12, 12)
         .map { z => (z + ((3 - byte) % rotWidth)) % 16 }
       ))
     val look2 = if (!needRot) splat(16, v) else splat(4, roti(distance).$(v))

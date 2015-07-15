@@ -17,7 +17,7 @@ object Frontend {
         case "--list-demos" :: tail => parseArg(cur ++ Map("list-demos" -> ()), tail)
         case "--demo" :: name :: tail => cur ++ Map("demo" -> (name, tail))
         case x :: tail => {
-          println("Unknown argument: $x")
+          println(s"Unknown argument: $x")
           sys.exit(1)
         }
       }

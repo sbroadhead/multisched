@@ -12,6 +12,7 @@ object Exp {
   private[Exp] object ExpBuilder extends FunctionBuilder {
     import Instructions._
     import Registers._
+
     import mutators._
     import mathUtils._
 

@@ -28,11 +28,13 @@ class FunctionDotRenderer(cg: FunctionGraph) extends CodeGraphRenderer[Register,
     edge.label match {
       case const((a,b,c,d)) =>
         attr("shape", "note")
+        attr("fontname", "courier")
         attr("label", s"0x${a.toHexString}\\n0x${b.toHexString}\\n0x${c.toHexString}\\n0x${d.toHexString}")
         attr("style", "filled")
         attr("fillcolor", "#ffcccc")
       case x =>
         attr("shape", "rect")
+        attr("fontname", "helvetica")
         attr("label", s"${edge.label.toString}")
         attr("style", "filled")
         attr("fillcolor", "#ccccff")
