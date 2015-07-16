@@ -13,7 +13,13 @@ class ExpSpec extends Specification {
 
   "exp codegraph" should {
     "execute correctly" in {
-      evalExp(1, 2, 3, 4) must_== (math.exp(1).toFloat, math.exp(2).toFloat, math.exp(3).toFloat, math.exp(4).toFloat)
+      val (a, b, c, d) = evalExp(1, 2, 3, 4)
+      val (fa, fb, fc, fd) = (math.exp(1).toFloat, math.exp(2).toFloat, math.exp(3).toFloat, math.exp(4).toFloat)
+
+      a must beCloseTo(fa, 0.0001f)
+      b must beCloseTo(fb, 0.0001f)
+      c must beCloseTo(fc, 0.0001f)
+      d must beCloseTo(fd, 0.0001f)
     }
   }
 
