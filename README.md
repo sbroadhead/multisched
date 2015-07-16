@@ -7,4 +7,8 @@ Currently the frontend is simply a launcher for demos (essentially interactive u
 
 ## Progress
 Got the CodeGraph builder working and imported the SPU version of Exp from the Haskell version.
-<img src="https://raw.githubusercontent.com/sbroadhead/multisched/master/misc/images/expgraph.png" width="100%">
+<img src="https://cdn.rawgit.com/sbroadhead/multisched/master/misc/images/expuneval.svg" width="100%">
+
+Also got evaluation of the CodeGraph working, and the exp function is now working. Also got cool annotated dot graph
+output working.
+<img src="https://cdn.rawgit.com/sbroadhead/multisched/master/misc/images/expeval.svg" width="100%">
