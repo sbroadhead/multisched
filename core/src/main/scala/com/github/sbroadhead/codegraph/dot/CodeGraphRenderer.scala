@@ -47,8 +47,12 @@ class CodeGraphRenderer[N, E](cg: CodeGraph[N, E]) {
         stmt(node(s"n${k.toHexString}")(buildNodeLabelAttributes(k)))
       for ((k, e) <- cg.edges) {
         stmt(node(s"e${k.toHexString}")(buildEdgeLabelAttributes(k)))
-        for (src <- e.args) stmt(edge(Seq(s"n${src.toHexString}", s"e${k.toHexString}")) { attr =>  })
-        for (trg <- e.results) stmt(edge(Seq(s"e${k.toHexString}", s"n${trg.toHexString}")) { attr =>  })
+        for (src <- e.args.zipWithIndex) stmt(edge(Seq(s"n${src._1.toHexString}", s"e${k.toHexString}")) { attr =>
+          attr("headlabel" -> src._2.toString)
+          attr("fontname" -> "helvetica")
+        })
+        for (trg <- e.results.zipWithIndex) stmt(edge(Seq(s"e${k.toHexString}", s"n${trg._1.toHexString}")) { attr =>
+        })
       }
     }
 }

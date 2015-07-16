@@ -22,7 +22,7 @@ trait LookupTable8 {
    * @return The resulting column of the table
    */
   def lookup(low: Int)(v: NodeName[VEC4]): Seq[NodeName[VEC4]] = {
-    def index(vt: (NodeName[VEC4], NodeName[VEC4])): NodeName[VEC4] = shufb.$(vt._1, vt._2, createKey(low, v))
+    def index(vt: (NodeName[VEC4], NodeName[VEC4])): NodeName[VEC4] = shufb.$(vt._1, vt._2, createKey(low, v)).named("lookupIndex")
     makeTable(low, values).map(index)
   }
 
@@ -40,17 +40,17 @@ trait LookupTable8 {
     val needRot = lowBit > 2
     val (byte, bit) = if (!needRot) (lowByte, lowBit) else (1 + lowByte, 0)
     val (c0123, mask) = bit match {
-      case 0 => (splatInt4(0x00081018), splatInt4(0x07070707))
-      case 1 => (splatInt4(0x00011011), splatInt4(0x0e0e0e0e))
-      case 2 => (splatInt4(0x00010203), splatInt4(0x1c1c1c1c))
+      case 0 => (splatInt4(0x00081018).named("c0123"), splatInt4(0x07070707).named("mask"))
+      case 1 => (splatInt4(0x00011011).named("c0123"), splatInt4(0x0e0e0e0e).named("mask"))
+      case 2 => (splatInt4(0x00010203).named("c0123"), splatInt4(0x1c1c1c1c).named("mask"))
     }
     def splat(rotWidth: Int, x: NodeName[VEC4]) =
       shufb.$(x, x, bytes16(
         Seq(0, 0, 0, 0, 4, 4, 4, 4, 8, 8, 8, 8, 12, 12, 12, 12)
         .map { z => (z + ((3 - byte) % rotWidth)) % 16 }
-      ))
-    val look2 = if (!needRot) splat(16, v) else splat(4, roti(distance).$(v))
-    selb.$(c0123, look2, mask)
+      ).named("splatKey")).named(s"splat($rotWidth)")
+    val look2 = { if (!needRot) splat(16, v) else splat(4, roti(distance).$(v)) }.named("look2")
+    giveName(selb.$(c0123, look2, mask), s"createKey")
   }
 
   private def makePair(low: Int)(xs: Seq[Int]): (NodeName[VEC4], NodeName[VEC4]) = {
@@ -64,7 +64,7 @@ trait LookupTable8 {
     }
     val permutedBytes = inOrderBytes.zip(order).sortBy(_._2).map(_._1.toInt)
     val (b1, b2) = permutedBytes.splitAt(16)
-    (bytes16(b1), bytes16(b2))
+    (bytes16(b1).named("makePair_1"), bytes16(b2).named("makePair_2"))
   }
 
   private def makeTable(low: Int, xss: Seq[Seq[Int]]): Seq[(NodeName[VEC4], NodeName[VEC4])] =

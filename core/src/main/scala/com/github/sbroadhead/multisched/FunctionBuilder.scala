@@ -1,5 +1,6 @@
 package com.github.sbroadhead.multisched
 
+import com.github.sbroadhead.codegraph.CodeGraph.EdgeKey
 import com.github.sbroadhead.codegraph._
 import Instructions._
 import Registers._
@@ -29,7 +30,7 @@ class FunctionBuilder extends CodeGraphBuilder[Register, Instruction] { self =>
     def bytes16(b: Seq[Int]): NodeName[VEC4] = {
       if (b.length != 16)
         throw new RuntimeException("bytes16 requires a 16-byte argument")
-      val Seq(p, q, r, s): Seq[Int] = b.grouped(4).map(_.fold(0)(_ << 8 | _)).toSeq
+      val Seq(p, q, r, s): Seq[Int] = b.grouped(4).map(_.fold(0)((x, y) => x << 8 | (y & 0xff))).toSeq
       Instructions.const((p, q, r, s)).$()
     }
   }

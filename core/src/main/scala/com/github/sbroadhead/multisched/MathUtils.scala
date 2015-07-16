@@ -18,7 +18,7 @@ trait MathUtils {
    */
   def onePlusMant(bits: Int, v: NodeName[VEC4]): NodeName[VEC4] = {
     import builder.mutators._
-    selb.$(splatInt4(0x3f800000), v, splatFloat4(exp2(bits.toFloat) - 1))._1
+    selb.$(splatInt4(0x3f800000), v, splatInt4(exp2(bits) - 1))._1
   }
 
   /**
@@ -29,9 +29,11 @@ trait MathUtils {
    */
   def evalPolynomial(coeffs: Seq[NodeName[VEC4]])(v: NodeName[VEC4]): NodeName[VEC4] = {
     import builder.mutators._
-    var r = coeffs.head
-    for (c <- coeffs.tail) {
-      r = fma.$(r, v, c)
+    var i = 0
+    var r = coeffs.last
+    for (c <- coeffs.init.reverse) {
+      r = fma.$(r, v, c).named(s"poly$i")
+      i += 1
     }
     r
   }

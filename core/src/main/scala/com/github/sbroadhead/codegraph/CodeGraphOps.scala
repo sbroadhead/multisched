@@ -70,7 +70,8 @@ class CodeGraphOps[N, E](val cg: CodeGraph[N, E]) extends AnyVal {
   }
 
   /**
-   * Return a new CodeGraph with any unused nodes and edges deleted.
+   * Return a new CodeGraph with any unused nodes and edges deleted, and any duplicated
+   * operations collapsed into a single operation.
    * @return The cleaned CodeGraph.
    */
   def clean: CodeGraph[N, E] = {

@@ -12,7 +12,16 @@ package object multisched {
   /**
    * The function `2^x`.
    */
-  def exp2(p: Float): Float = p match {
+  def exp2f(p: Float): Float = p match {
+    case 0 => 1
+    case x if x > 0 => 2 * exp2f(p - 1)
+    case x if x < 0 => exp2f(p + 1) / 2
+  }
+
+  /**
+   * The function `2^x`.
+   */
+  def exp2(p: Int): Int = p match {
     case 0 => 1
     case x if x > 0 => 2 * exp2(p - 1)
     case x if x < 0 => exp2(p + 1) / 2

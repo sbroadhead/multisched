@@ -21,17 +21,17 @@ object Exp {
 
     val v = input
 
-    val vByLog2 = fm.$(v, splatFloat4({ 1 / math.log(2) * (1 + 1.5 * exp2(-24)) }.toFloat))
+    val vByLog2 = fm.$(v, splatFloat4({ 1 / math.log(2) * (1 + 1.5 * exp2f(-24)) }.toFloat))
 
-    val restrictDomainMin = fcgt.$(splatFloat4(-127.0f), vByLog2)
-    val domainMin = selb.$(vByLog2, splatFloat4(-127.0f), restrictDomainMin)
-    val restrictDomainMax = fcgt.$(vByLog2, splatFloat4(129 - 128 * exp2(-23)))
+    val restrictDomainMin = fcgt.$(splatFloat4(-127), vByLog2)
+    val domainMin = selb.$(vByLog2, splatFloat4(-127), restrictDomainMin)
+    val restrictDomainMax = fcgt.$(vByLog2, splatFloat4(129 - 128 * exp2f(-23)))
 
-    val vByLog2AsInt = cflts(23).$(vByLog2)
+    val vByLog2AsInt = cflts(23).$(domainMin)
     val exponent = and.$(vByLog2AsInt, splatInt4(0xff800000))
     val exp = a.$(exponent, splatInt4(0x3f800000))
     val frac = onePlusMant(20, vByLog2AsInt)
-    val coeffs = ExpCoeffTable.lookup(20)(vByLog2AsInt)
+    val coeffs = ExpCoeffTable.lookup(20)(vByLog2AsInt).zipWithIndex.map { case (n, i) => giveName(n, s"coeff$i") }
     val polyResult = evalPolynomial(coeffs)(frac)
     val raw = fm.$(exp, polyResult)
     val result = selb.$(raw, splatFloat4(Float.MaxValue), restrictDomainMax)
@@ -62,4 +62,6 @@ object Exp {
    * The immutable code graph representing this function.
    */
   val codeGraph: FunctionGraph = ExpBuilder.getResult.clean
+
+  val nodeNameMap: Map[CodeGraph.NodeKey, String] = ExpBuilder.nodeNames
 }

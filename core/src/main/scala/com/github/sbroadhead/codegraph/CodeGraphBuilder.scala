@@ -1,12 +1,16 @@
 package com.github.sbroadhead.codegraph
 
 import com.github.sbroadhead._
+import com.github.sbroadhead.codegraph.CodeGraph.NodeKey
 
+import scala.util._
 import scala.language.experimental.macros
 import scala.collection.mutable.{Seq => MutableSeq}
+import scala.reflect.runtime.universe.{Try => _, _}
 import shapeless._
 import shapeless.syntax.std.traversable._
 import shapeless.ops.{hlist => hl, tuple => tp, traversable => tv}
+
 
 /**
  * Trait supporting mutable [[CodeGraph]] operations.
@@ -142,15 +146,17 @@ trait CodeGraphBuilder[N, E] extends CodeGraph[N, E] with CodeGraphInterface { s
        * @return the result nodes of this edge.
        */
       def withArgs(args: ATup): RTup = {
+        val argKeys = args.productIterator.map { case NodeName(_, key) => key }.toSeq
+        if (_cache.contains((label, argKeys))) {
+          return _cache((label, argKeys)).asInstanceOf[RTup]
+        }
         val resultNodes = inst.apply()
+        val resKeys = resultNodes.productIterator.map { case NodeName(_, key) => key }
         val resultsTyped = resultNodes.productIterator.map { x => x.asInstanceOf[NodeName[N]] }.toSeq
         for (node <- resultsTyped) addNode(node)
-        val edge = {
-          val argKeys = args.productIterator.map { case NodeName(_, key) => key }
-          val resKeys = resultNodes.productIterator.map { case NodeName(_, key) => key }
-          new CodeGraph.Edge[E](label, argKeys.toSeq, resKeys.toSeq)
-        }
+        val edge = new CodeGraph.Edge[E](label, argKeys.toSeq, resKeys.toSeq)
         addEdge(edge)
+        _cache += (label, argKeys) -> resultNodes
         resultNodes
       }
 
@@ -180,9 +186,52 @@ trait CodeGraphBuilder[N, E] extends CodeGraph[N, E] with CodeGraphInterface { s
       cg.edges(newKey) = edge
       newKey
     }
+
+    /**
+     * Associate a name with a given node.
+     * @param node The node to name.
+     * @param name The name.
+     */
+    def giveName[M <: N](node: NodeName[M], name: String): NodeName[M] = {
+      _namedNodes += node.key -> name
+      node
+    }
+
+    implicit class NodeOps[M <: N](node: NodeName[M]) {
+      def named(name: String): NodeName[M] = giveName(node, name)
+    }
+
+    implicit class NodeTupleOps[M <: N](node: Tuple1[NodeName[M]]) {
+      def named(name: String): NodeName[M] = giveName(node._1, name)
+    }
   }
 
   def getResult: CodeGraph[N, E] = CodeGraph[N, E](nodes, edges, inputs, outputs)
+
+  /**
+   * Returns a map from node keys to friendly names. Useful for debugging.
+   */
+  def nodeNames(implicit ntt: TypeTag[N]) : Map[NodeKey, String] = {
+    val rm = scala.reflect.runtime.currentMirror
+    rm.classSymbol(this.getClass).toType.members.map {
+      case m: TermSymbol =>
+        if (m.isMethod) { None }
+        else {
+          m.getter match {
+            case getter: MethodSymbol =>
+              val instanceMirror = rm.reflect(this)
+              val value = instanceMirror.reflectMethod(getter).apply()
+              val node = value match {
+                case x: Tuple1[_] => Try(x._1.asInstanceOf[NodeName[N]]).toOption
+                case x => Try(x.asInstanceOf[NodeName[N]]).toOption
+              }
+              node.map { nd => nd.key -> m.name.toString }
+            case _ => None
+          }
+        }
+      case _ => None
+    }.collect { case Some(x) => x }.toMap ++ _namedNodes
+  }
 
   /**
    * Default mutator container.
@@ -193,4 +242,6 @@ trait CodeGraphBuilder[N, E] extends CodeGraph[N, E] with CodeGraphInterface { s
   private var _inputsCreated: Boolean = false
   private var _outputNodes: Product = <>
   private var _outputNodesSet: Boolean = false
+  private var _cache: Map[(E, Seq[CodeGraph.NodeKey]), Any] = Map()
+  private var _namedNodes: Map[CodeGraph.NodeKey, String] = Map()
 }
