@@ -8,5 +8,5 @@ object Registers {
   abstract class Register
 
   /** Vector of four word slots */
-  case class VEC4() extends Register
+  case class VEC() extends Register
 }

@@ -34,7 +34,7 @@ class FunctionDotEvalRenderer(cg: FunctionGraph, nodeNameMap: Map[NodeKey, Strin
         attr("fontname", "courier")
         attr("fontsize", "11.0")
         attr("label" -> dumpVec(get(key)))
-      case VEC4() =>
+      case VEC() =>
         attr("shape" -> "box")
         attr("style" -> "filled")
         attr("fontname", "courier")
@@ -46,7 +46,7 @@ class FunctionDotEvalRenderer(cg: FunctionGraph, nodeNameMap: Map[NodeKey, Strin
   override def buildEdgeLabelAttributes(key: EdgeKey): Builder[(String, String)] = { attr =>
     val edge = cg.edge(key).head
     edge.label match {
-      case const((a,b,c,d)) =>
+      case const(Vec4(a,b,c,d)) =>
         attr("shape", "note")
         attr("fontname", "courier")
         attr("label", s"0x${a.toHexString}\\n0x${b.toHexString}\\n0x${c.toHexString}\\n0x${d.toHexString}")

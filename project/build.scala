@@ -5,7 +5,7 @@ object BuildSettings {
   val buildSettings = Defaults.coreDefaultSettings ++ Seq(
     organization := "com.github.sbroadhead",
     version := "1.0.0",
-    scalaVersion := "2.11.6",
+    scalaVersion := "2.11.7",
     resolvers ++= Seq(
       Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
@@ -45,7 +45,10 @@ object MultiSchedBuild extends Build {
     file("core"),
     settings = buildSettings ++ Seq(
       name := "multisched",
-      libraryDependencies ++= Seq("org.reflections" % "reflections" % "0.9.10")
+      libraryDependencies ++= Seq(
+        "org.reflections" % "reflections" % "0.9.10",
+        "eu.timepit" %% "refined" % "0.2.3"
+      )
     )
   ) dependsOn macros
 }

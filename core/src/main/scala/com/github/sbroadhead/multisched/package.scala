@@ -7,8 +7,8 @@ package object multisched {
   import Instructions._
   import Registers._
 
-  type FunctionGraph = CodeGraph[Register, Instruction]
-
+  trait FunctionGraph extends CodeGraph[Register, Instruction] with CodeGraphInterface
+  
   /**
    * The function `2^x`.
    */

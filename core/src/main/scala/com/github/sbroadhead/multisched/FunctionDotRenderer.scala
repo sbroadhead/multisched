@@ -19,14 +19,14 @@ class FunctionDotRenderer(cg: FunctionGraph) extends CodeGraphRenderer[Register,
         attr("shape", "triangle"); attr("style", "filled"); attr("label", cg.inputs.indexOf(key).toString)
       case x if cg.outputs.contains(key) =>
         attr("shape", "invtriangle"); attr("style", "filled"); attr("label", cg.outputs.indexOf(key).toString)
-      case VEC4() => attr("shape", "point"); attr("color", "#00a000")
+      case VEC() => attr("shape", "point"); attr("color", "#00a000")
     }
   }
 
   override def buildEdgeLabelAttributes(key: EdgeKey): Builder[(String, String)] = { attr =>
     val edge = cg.edge(key).head
     edge.label match {
-      case const((a,b,c,d)) =>
+      case const(Vec4(a,b,c,d)) =>
         attr("shape", "note")
         attr("fontname", "courier")
         attr("label", s"0x${a.toHexString}\\n0x${b.toHexString}\\n0x${c.toHexString}\\n0x${d.toHexString}")

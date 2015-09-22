@@ -12,15 +12,17 @@ object Dot {
     results.toSeq
   }
 
+  def escape(x: String) = x.replaceAll("\\n", "\\\\n")
+
   def digraph(id: String)(body: Builder[String]): String =
-    s"digraph \042$id\042 { ${runBuilder(body).mkString(";")} }"
+    s"digraph \042$id\042 { ${runBuilder(body).mkString(";\n")} }"
 
   def edge(parts: Seq[String])(body: Builder[(String, String)]): String =
-    s"${parts.mkString("->")} [${runBuilder(body).map { case (a, b) => s"$a = \042$b\042" }.mkString(";")}]"
+    s"${parts.mkString("->")} [\n${runBuilder(body).map { case (a, b) => s"$a=\042${escape(b)}\042" }.mkString("\n")}]"
 
   def node(id: String)(body: Builder[(String, String)]): String =
-    s"$id [${runBuilder(body).map { case (a, b) => s"$a = \042$b\042" }.mkString(";")}]"
+    s"$id [\n${runBuilder(body).map { case (a, b) => s"$a=\042${escape(b)}\042" }.mkString("\n")}]"
 
   def subgraph(id: String)(body: Builder[String]): String =
-    s"subgraph \042$id\042 { ${runBuilder(body).mkString(";")} }"
+    s"subgraph \042$id\042 { ${runBuilder(body).mkString(";\n")} }"
 }

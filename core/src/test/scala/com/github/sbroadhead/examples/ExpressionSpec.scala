@@ -6,6 +6,21 @@ import shapeless._
 class ExpressionSpec extends Specification {
   import Expressions._
 
+  "fahrenheitToCelsius" should {
+    "evaluate correctly" in {
+      evaluate(fahrenheitToCelsius, Seq(32)) must_== Seq(0)
+      evaluate(fahrenheitToCelsius, Seq(212)) must_== Seq(100)
+    }
+  }
+
+  "isFreezing" should {
+    "evaluate correctly" in {
+      evaluate(isFreezing, Seq(32)) must_== Seq(true)
+      evaluate(isFreezing, Seq(0)) must_== Seq(true)
+      evaluate(isFreezing, Seq(66)) must_== Seq(false)
+    }
+  }
+
   "simpleExprCodeGraph" should {
     "evaluate correctly" in {
       evaluate(simpleExprCodeGraph, Seq(10, 20)) must_== Seq(170, true)

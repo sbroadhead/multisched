@@ -7,7 +7,7 @@ import com.github.sbroadhead.multisched.functions._
 
 class ExpSpec extends Specification {
   def evalExp(a: Float, b: Float, c: Float, d: Float): (Float, Float, Float, Float) = {
-    val results = Evaluator.evaluate(Exp.codeGraph, Seq(new Vec4(a, b, c, d)))._1
+    val results = Evaluator.evaluate(Exp.exp, Seq(new Vec4(a, b, c, d)))._1
     results.head.asInstanceOf[Vec4].floatView.tuple
   }
 

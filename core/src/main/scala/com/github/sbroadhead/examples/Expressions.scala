@@ -1,6 +1,13 @@
 package com.github.sbroadhead.examples
 
+import java.io.{File, FileWriter, BufferedWriter}
+import scala.sys.process._
+
+import com.github.sbroadhead.Demo
 import com.github.sbroadhead.codegraph._
+import com.github.sbroadhead.codegraph.dot.CodeGraphRenderer
+import com.github.sbroadhead.examples.Expressions.EdgeLabels.ExprEdgeLabel
+import com.github.sbroadhead.examples.Expressions.NodeLabels.ExprNodeLabel
 
 /**
  * Example of using `CodeGraph` for a simple expression library.
@@ -22,30 +29,40 @@ object Expressions {
   object EdgeLabels {
     import NodeLabels._
 
+    object Sig {
+      trait Nullary[T] extends ExprEdgeLabel with EdgeLabel.Nullary[T]
+      trait Unary[T, U] extends ExprEdgeLabel with EdgeLabel.Unary[T, U]
+      trait Binary[T, U, V] extends ExprEdgeLabel with EdgeLabel.Binary[T, U, V]
+    }
+
     /** Base class for edge labels in the expression graph. */
     sealed abstract class ExprEdgeLabel
     /** Load a constant `Int`. */
-    case class ConstInt(value: Int) extends ExprEdgeLabel with EdgeLabel.Nullary[INT]
+    case class ConstInt(value: Int) extends Sig.Nullary[INT]
     /** Load a constant `Boolean`. */
-    case class ConstBool(value: Boolean) extends ExprEdgeLabel with EdgeLabel.Nullary[BOOL]
+    case class ConstBool(value: Boolean) extends Sig.Nullary[BOOL]
     /** Integer addition. */
-    case object `add` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, INT]
+    case object `add` extends Sig.Binary[INT, INT, INT]
     /** Integer subtraction. */
-    case object `sub` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, INT]
+    case object `sub` extends Sig.Binary[INT, INT, INT]
     /** Integer multiplication. */
-    case object `mul` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, INT]
+    case object `mul` extends Sig.Binary[INT, INT, INT]
     /** Integer division. */
-    case object `div` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, INT]
+    case object `div` extends Sig.Binary[INT, INT, INT]
     /** Integer compares less than. */
-    case object `lt` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, BOOL]
+    case object `lt` extends Sig.Binary[INT, INT, BOOL]
+    /** Integer compares less than. */
+    case object `leq` extends Sig.Binary[INT, INT, BOOL]
     /** Integer compares greater than. */
-    case object `gt` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, BOOL]
+    case object `gt` extends Sig.Binary[INT, INT, BOOL]
+    /** Integer compares less than. */
+    case object `geq` extends Sig.Binary[INT, INT, BOOL]
     /** Integer compares equal. */
-    case object `equ` extends ExprEdgeLabel with EdgeLabel.Binary[INT, INT, BOOL]
+    case object `equ` extends Sig.Binary[INT, INT, BOOL]
     /** Logical AND. */
-    case object `and` extends ExprEdgeLabel with EdgeLabel.Binary[BOOL, BOOL, BOOL]
+    case object `and` extends Sig.Binary[BOOL, BOOL, BOOL]
     /** Logical OR. */
-    case object `or` extends ExprEdgeLabel with EdgeLabel.Binary[BOOL, BOOL, BOOL]
+    case object `or` extends Sig.Binary[BOOL, BOOL, BOOL]
   }
 
   import NodeLabels._
@@ -54,7 +71,11 @@ object Expressions {
   /**
    * `CodeGraph` type representing expressions.
    */
-  type ExpressionCodeGraph = CodeGraph[ExprNodeLabel, ExprEdgeLabel]
+  trait ExpressionBase extends CodeGraph[ExprNodeLabel, ExprEdgeLabel] with CodeGraphInterface
+  trait Expression[Input0 <: Product, Output0 <: Product] extends ExpressionBase {
+    type Input = Input0
+    type Output = Output0
+  }
 
   /**
    * Type-class supporting the promotion of constant literals to well-typed node names generated
@@ -90,7 +111,7 @@ object Expressions {
    */
   def const[T, U <: ExprNodeLabel with Product, V <: ExprEdgeLabel with EdgeLabel.Nullary[U]](x: T)
     (implicit pc: ConstEdge[T, U, V], builder: CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel]): NodeName[U] = {
-      import builder.mutators._
+      import builder._
       val edgeLabel = pc.promote(x)
       val node = pc.newNode
       addNode(node)
@@ -99,12 +120,12 @@ object Expressions {
     }
 
   /**
-   * Fully evaluate an [[ExpressionCodeGraph]] and return the computed results.
-   * @param cg The [[ExpressionCodeGraph]] to evaluate.
+   * Fully evaluate an [[Expression]] and return the computed results.
+   * @param cg The [[Expression]] to evaluate.
    * @param inputs The inputs to the CodeGraph.
    * @return The computed results.
    */
-  def evaluate(cg: ExpressionCodeGraph, inputs: Seq[Any]): Seq[Any] = {
+  def evaluate[Input <: Product, Output <: Product](cg: Expression[Input, Output], inputs: Seq[Any]): Seq[Any] = {
     import CodeGraphOps._
     var env: Map[CodeGraph.NodeKey, Any] = cg.inputs.zip(inputs).toMap
     for (edgeKey <- cg.topSort) {
@@ -122,10 +143,13 @@ object Expressions {
         case `mul` => Seq(arg0[Integer] * arg1[Integer])
         case `div` => Seq(arg0[Integer] / arg1[Integer])
         case `lt` => Seq(arg0[Integer] < arg1[Integer])
+        case `leq` => Seq(arg0[Integer] <= arg1[Integer])
         case `gt` => Seq(arg0[Integer] > arg1[Integer])
+        case `geq` => Seq(arg0[Integer] >= arg1[Integer])
         case `equ` => Seq(arg0[Integer] == arg1[Integer])
         case `and` => Seq(arg0[Boolean] && arg1[Boolean])
         case `or` => Seq(arg0[Boolean] || arg1[Boolean])
+        case _ => sys.error(s"Unknown edge label: ${edge.label}")
       }
       env = env ++ edge.results.zip(results).toMap
     }
@@ -135,37 +159,48 @@ object Expressions {
   /**
    * Specialized [[CodeGraphBuilder]] supporting extended syntax for expressions.
    */
-  class ExpressionGraphBuilder extends CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel] {
-    import mutators._
+  trait ExpressionBuilder[Input <: Product, Output <: Product]
+     extends Expression[Input, Output] with CodeGraphBuilder[ExprNodeLabel, ExprEdgeLabel]
+  {  self: CodeGraph[ExprNodeLabel, ExprEdgeLabel] with CodeGraphInterface =>
 
     implicit class IntegerOperations(n: NodeName[INT]) {
-      def +(m: NodeName[INT]): NodeName[INT] = add.$(n, m)
-      def -(m: NodeName[INT]): NodeName[INT] = sub.$(n, m)
-      def *(m: NodeName[INT]): NodeName[INT] = mul.$(n, m)
-      def /(m: NodeName[INT]): NodeName[INT] = div.$(n, m)
-      def <(m: NodeName[INT]): NodeName[BOOL] = lt.$(n, m)
-      def >(m: NodeName[INT]): NodeName[BOOL] = gt.$(n, m)
-      def ===(m: NodeName[INT]): NodeName[BOOL] = equ.$(n, m)
+      def +(m: NodeName[INT]): NodeName[INT] = add(n, m)
+      def -(m: NodeName[INT]): NodeName[INT] = sub(n, m)
+      def *(m: NodeName[INT]): NodeName[INT] = mul(n, m)
+      def /(m: NodeName[INT]): NodeName[INT] = div(n, m)
+      def <(m: NodeName[INT]): NodeName[BOOL] = lt(n, m)
+      def <=(m: NodeName[INT]): NodeName[BOOL] = leq(n, m)
+      def >(m: NodeName[INT]): NodeName[BOOL] = gt(n, m)
+      def >=(m: NodeName[INT]): NodeName[BOOL] = geq(n, m)
+      def ===(m: NodeName[INT]): NodeName[BOOL] = equ(n, m)
     }
 
     implicit class BooleanOperations(n: NodeName[BOOL]) {
-      def &&(m: NodeName[BOOL]): NodeName[BOOL] = and.$(n, m)
-      def ||(m: NodeName[BOOL]): NodeName[BOOL] = or.$(n, m)
+      def &&(m: NodeName[BOOL]): NodeName[BOOL] = and(n, m)
+      def ||(m: NodeName[BOOL]): NodeName[BOOL] = or(n, m)
     }
 
-    // Automatic constant promotion
-    implicit def toConst[T, U <: ExprNodeLabel with Product, V <: ExprEdgeLabel with EdgeLabel.Nullary[U]]
-      (value: T)(implicit ct: ConstEdge[T, U, V]): NodeName[U] =
-        const(value)
+    implicit def intTupleOps(value: Tuple1[NodeName[INT]]): IntegerOperations =
+      new IntegerOperations(value._1)
+    implicit def boolTupleOps(value: Tuple1[NodeName[BOOL]]): BooleanOperations =
+      new BooleanOperations(value._1)
+    implicit def intConst(value: Int): NodeName[INT] = ConstInt(value)()
+    implicit def boolConst(value: Boolean): NodeName[BOOL] = ConstBool(value)()
+  }
+
+  import NodeLabels._
+  import EdgeLabels._
+
+  object fahrenheitToCelsius extends ExpressionBuilder[Unary[INT], Unary[INT]] {
+    output(((input - 32) * 5) / 9)
+  }
+
+  object isFreezing extends ExpressionBuilder[Unary[INT], Unary[BOOL]] {
+    output(fahrenheitToCelsius(input) <= 0)
   }
 
   // Simple expression
-  object simpleExprCodeGraph extends ExpressionGraphBuilder {
-    type Input = (INT, INT)
-    type Output = (INT, BOOL)
-
-    import mutators._
-
+  object simpleExprCodeGraph extends ExpressionBuilder[Binary[INT, INT], Binary[INT, BOOL]] {
     val (x, y) = input
     val sum = x + y
     val prod = x * y
@@ -176,12 +211,7 @@ object Expressions {
   }
 
   // Evaluate a polynomial
-  case class PolynomialGraph(coeffs: Seq[Int]) extends ExpressionGraphBuilder {
-    type Input = Tuple1[INT]
-    type Output = Tuple1[INT]
-
-    import mutators._
-
+  case class PolynomialGraph(coeffs: Seq[Int]) extends ExpressionBuilder[Unary[INT], Unary[INT]]  {
     val x = input
     var r = const(coeffs.head)
     for (a <- coeffs.tail) {
@@ -191,15 +221,31 @@ object Expressions {
   }
 
   // Compose CodeGraphs using splicing
-  object spliceCodeGraph extends ExpressionGraphBuilder {
-    type Input = Tuple2[INT, INT]
-    type Output = Tuple1[INT]
-
-    import mutators._
-
+  object spliceCodeGraph extends ExpressionBuilder[Binary[INT, INT], Unary[INT]] {
     val (x, y) = input
-    val (prodMinusSum, resultGt100) = splice(simpleExprCodeGraph, x, y)
-    val answer = splice(PolynomialGraph(Seq(2, 4, 6, 8)), prodMinusSum)
+
+    val (prodMinusSum, resultGt100) = simpleExprCodeGraph(x, y)
+    val answer = PolynomialGraph(Seq(2, 4, 6, 8))(prodMinusSum)
     output(answer)
+  }
+}
+
+object Demos {
+  import Expressions.NodeLabels._
+  import Expressions.EdgeLabels._
+
+  class ExpressionDotGraph extends Demo {
+    override def run(args: Seq[String]): Unit = {
+      val renderer = new CodeGraphRenderer[ExprNodeLabel, ExprEdgeLabel](Expressions.isFreezing)
+      val dot = renderer.render
+
+      val dotFile = File.createTempFile("codegraph", ".dot")
+      val bw = new BufferedWriter(new FileWriter(dotFile))
+      bw.write(dot)
+      bw.close()
+
+      val viewer = if (args.isEmpty) { "/Applications/Graphviz.app/Contents/MacOS/Graphviz" } else args.head
+      Seq(viewer, dotFile.getAbsolutePath).!
+    }
   }
 }

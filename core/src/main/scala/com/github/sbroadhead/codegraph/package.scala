@@ -11,6 +11,11 @@ package object codegraph {
   /** [[PUnit]] version of () */
   def <> = PUnit()
 
+  type Nullary = PUnit
+  type Unary[T] = Tuple1[T]
+  type Binary[T, U] = Tuple2[T, U]
+  type Ternary[T, U, V] = Tuple3[T, U, V]
+
   /** For the auto-instantiator behavior in [[NodeNameInstantiator]]. */
   implicit def hnilTuplesToPUnitToo: hl.Tupler.Aux[HNil, PUnit] =
     new Tupler[HNil] {

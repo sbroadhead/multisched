@@ -18,14 +18,14 @@ object Evaluator {
       val edge = cg.edge(edgeKey).head
       def args = edge.args.map(x => env.getOrElse(x, throw new RuntimeException(s"Node not evaluated: $x")))
 
-      def results = evaluateEdge(edge, args)
+      def results = evaluateInstruction(edge.label, args)
       env = env ++ edge.results.zip(results).toMap
     }
 
     (cg.outputs.map(x => env.getOrElse(x, throw new RuntimeException(s"Node not evaluated: $x"))), env)
   }
 
-  private def evaluateEdge(edge: CodeGraph.Edge[Instruction], args: Seq[Any]): Seq[Any] = {
+  def evaluateInstruction(inst: Instruction, args: Seq[Any]): Seq[Any] = {
     def arg0[T]: T = args(0).asInstanceOf[T]
     def arg1[T]: T = args(1).asInstanceOf[T]
     def arg2[T]: T = args(2).asInstanceOf[T]
@@ -37,10 +37,10 @@ object Evaluator {
     def floatCompare(f: (Float, Float) => Boolean)(x: Float, y: Float): Int =
       if (f(x, y)) { -1 } else { 0 }
 
-    edge.label match {
+    inst match {
       //
       case const(x) =>
-        Seq((Vec4.apply _).tupled(x))
+        Seq(x)
 
       //
       case `a` =>

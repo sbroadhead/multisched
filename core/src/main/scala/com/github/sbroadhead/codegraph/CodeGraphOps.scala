@@ -1,5 +1,7 @@
 package com.github.sbroadhead.codegraph
 
+import com.github.sbroadhead.multisched.LatencyInfo
+
 import scala.collection.mutable.{Map => MutableMap, MutableList, Set => MutableSet}
 import scala.util.Random
 
@@ -26,6 +28,7 @@ class CodeGraphOps[N, E](val cg: CodeGraph[N, E]) extends AnyVal {
    */
   def node(nodes: CodeGraph.NodeKey*): Seq[N] =
     nodes.map(x => cg.nodes.getOrElse(x, throw InvalidNodeKeyException(x)))
+
 
   /**
    * Return a sequence of edge keys representing the producing edges

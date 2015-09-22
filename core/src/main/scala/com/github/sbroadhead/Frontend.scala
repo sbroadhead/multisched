@@ -38,8 +38,7 @@ object Frontend {
   def getDemos: Set[Class[_ <: Demo]] = {
     import scala.collection.JavaConversions._
     val refl = new Reflections(ClasspathHelper.forPackage("com.github.sbroadhead"), new SubTypesScanner())
-    val iter = for (s <- refl.getSubTypesOf(classOf[Demo])) yield s
-    iter.toSet
+    refl.getSubTypesOf(classOf[Demo]).toSet
   }
 
   def showDemos(): Unit = {

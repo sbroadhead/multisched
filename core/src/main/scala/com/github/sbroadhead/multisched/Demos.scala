@@ -16,7 +16,7 @@ object Demos {
 
   class ExpDotGraph extends Demo {
     override def run(args: Seq[String]): Unit = {
-      val renderer = new FunctionDotRenderer(Exp.codeGraph)
+      val renderer = new FunctionDotRenderer(Exp.exp)
       val dot = renderer.render
 
       val dotFile = File.createTempFile("multisched", ".dot")
@@ -32,9 +32,9 @@ object Demos {
   class ExpEvalDotGraph extends Demo {
     override def run(args: Seq[String]): Unit = {
       val arg = args.headOption.getOrElse("0").toFloat
-      val (_, env) = Evaluator.evaluate(Exp.codeGraph, Seq(new Vec4(arg)))
+      val (_, env) = Evaluator.evaluate(Exp.exp, Seq(new Vec4(arg)))
 
-      val renderer = new FunctionDotEvalRenderer(Exp.codeGraph, Exp.nodeNameMap, env)
+      val renderer = new FunctionDotEvalRenderer(Exp.exp, Exp.nodeNameMap, env)
       val dot = renderer.render
 
       val dotFile = File.createTempFile("multisched", ".dot")
@@ -67,7 +67,7 @@ object Demos {
 
     override def run(args: Seq[String]): Unit = {
       import CodeGraphOps._
-      val cg = Exp.codeGraph
+      val cg = Exp.exp
 
       val arg = args.headOption.getOrElse("0").toFloat
       val (_, env) = Evaluator.evaluate(cg, Seq(new Vec4(arg)))

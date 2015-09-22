@@ -29,13 +29,13 @@ object CodeGraphMacros {
     }
   }
 
-  def spliceImpl(c: whitebox.Context)(cg: c.Tree, args: c.Tree*): c.Tree = {
+  def spliceSyntaxImpl(c: whitebox.Context)(args: c.Tree*): c.Tree = {
     import c.universe._
     val prefix = c.prefix
     args match {
-      case Nil => q"$prefix.Splicer($cg).apply(<>)"
-      case x :: Nil => q"$prefix.Splicer($cg).apply(Tuple1($x))"
-      case xs => q"$prefix.Splicer($cg).apply((..$xs))"
+      case Nil => q"$prefix.apply(<>)"
+      case x :: Nil => q"$prefix.apply(Tuple1($x))"
+      case xs => q"$prefix.apply((..$xs))"
     }
   }
 }
